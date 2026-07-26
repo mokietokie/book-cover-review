@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookDetailView } from "@/components/BookDetailView";
+import { TopNav } from "@/components/TopNav";
+import { createClient } from "@/lib/supabase/client";
 import type { AladinReview, BookDetailViewData } from "@/lib/types";
 
 interface BookDetail {
@@ -42,22 +44,11 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
-function TopNav() {
-  return (
-    <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
-        <span className="text-base font-semibold text-neutral-900">
-          📚 표지리뷰
-        </span>
-        <Link
-          href="/books"
-          className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
-        >
-          내 목록 →
-        </Link>
-      </div>
-    </header>
-  );
+function buildSearchUrls(title: string): SavedBook {
+  return {
+    kyobo_search_url: `https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(title)}`,
+    yes24_search_url: `https://www.yes24.com/product/search?query=${encodeURIComponent(title)}`,
+  };
 }
 
 export default function Home() {
@@ -68,7 +59,21 @@ export default function Home() {
   const [saved, setSaved] = useState<SavedBook | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [dragActive, setDragActive] = useState(false);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setLoggedIn(Boolean(data.user));
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setLoggedIn(Boolean(session?.user));
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const previewUrl = useMemo(
     () => (file ? URL.createObjectURL(file) : null),
@@ -139,34 +144,38 @@ export default function Home() {
         );
       }
 
-      const saveRes = await fetch("/api/books", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: lookupData.title,
-          author: lookupData.author,
-          isbn: lookupData.isbn13,
-          aladinItemId: lookupData.itemId,
-          categoryName: lookupData.categoryName,
-          publisher: lookupData.publisher,
-          pubDate: lookupData.pubDate,
-          description: lookupData.description,
-          customerReviewRank: lookupData.customerReviewRank,
-          coverUrl: lookupData.cover,
-          reviews: {
-            ratingCount: lookupData.ratingCount,
-            commentReviewCount: lookupData.commentReviewCount,
-            myReviewCount: lookupData.myReviewCount,
-          },
-        }),
-      });
-      const saveData = await saveRes.json();
-      if (!saveRes.ok) {
-        throw new Error(GENERAL_ERROR);
+      if (loggedIn) {
+        const saveRes = await fetch("/api/books", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: lookupData.title,
+            author: lookupData.author,
+            isbn: lookupData.isbn13,
+            aladinItemId: lookupData.itemId,
+            categoryName: lookupData.categoryName,
+            publisher: lookupData.publisher,
+            pubDate: lookupData.pubDate,
+            description: lookupData.description,
+            customerReviewRank: lookupData.customerReviewRank,
+            coverUrl: lookupData.cover,
+            reviews: {
+              ratingCount: lookupData.ratingCount,
+              commentReviewCount: lookupData.commentReviewCount,
+              myReviewCount: lookupData.myReviewCount,
+            },
+          }),
+        });
+        const saveData = await saveRes.json();
+        if (!saveRes.ok) {
+          throw new Error(GENERAL_ERROR);
+        }
+        setSaved(saveData as SavedBook);
+      } else {
+        setSaved(null);
       }
 
       setDetail(lookupData);
-      setSaved(saveData as SavedBook);
       setStatus("result");
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : GENERAL_ERROR);
@@ -176,7 +185,7 @@ export default function Home() {
 
   return (
     <div className="flex flex-1 flex-col bg-neutral-50">
-      <TopNav />
+      <TopNav primaryHref="/books" primaryLabel="내 목록 →" />
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-10">
         {status === "idle" && (
           <div className="flex flex-col gap-2">
@@ -380,12 +389,38 @@ export default function Home() {
                   commentReviewCount: detail.commentReviewCount,
                   myReviewCount: detail.myReviewCount,
                   reviews: detail.reviews,
-                  kyoboSearchUrl: saved?.kyobo_search_url ?? null,
-                  yes24SearchUrl: saved?.yes24_search_url ?? null,
+                  kyoboSearchUrl:
+                    saved?.kyobo_search_url ??
+                    buildSearchUrls(detail.title).kyobo_search_url,
+                  yes24SearchUrl:
+                    saved?.yes24_search_url ??
+                    buildSearchUrls(detail.title).yes24_search_url,
                 } satisfies BookDetailViewData
               }
               showSavedNote={saved !== null}
             />
+
+            {loggedIn === false && (
+              <div className="rounded-lg border border-neutral-200 bg-white p-4">
+                <p className="text-sm text-neutral-700">
+                  로그인하면 이 책이 내 목록에 저장돼요
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <Link
+                    href="/login"
+                    className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-100"
+                  >
+                    로그인
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+                  >
+                    회원가입
+                  </Link>
+                </div>
+              </div>
+            )}
 
             <button
               onClick={resetToIdle}

@@ -25,3 +25,12 @@ create table if not exists public.books (
 alter table public.books add column if not exists publisher text;
 alter table public.books add column if not exists pub_date text;
 alter table public.books add column if not exists description text;
+
+-- docs/TRD.md 4.1절 RLS 정책 (Phase 2, Step 9-3에서 Supabase SQL Editor로 실행)
+alter table public.books enable row level security;
+
+create policy "본인 책만 조회" on public.books
+  for select using (auth.uid() = user_id);
+
+create policy "본인 책만 저장" on public.books
+  for insert with check (auth.uid() = user_id);

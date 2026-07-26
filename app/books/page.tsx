@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookDetailView, StarRating } from "@/components/BookDetailView";
+import { TopNav } from "@/components/TopNav";
 import type { BookDetailViewData } from "@/lib/types";
 
 interface BookRow {
@@ -32,24 +33,6 @@ interface CategoryGroup {
 
 const GENERAL_ERROR = "일시적인 오류가 발생했어요, 다시 시도해주세요";
 
-function TopNav() {
-  return (
-    <header className="border-b border-neutral-200 bg-white">
-      <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-3">
-        <span className="text-base font-semibold text-neutral-900">
-          📚 표지리뷰
-        </span>
-        <Link
-          href="/"
-          className="text-sm font-medium text-neutral-600 hover:text-neutral-900"
-        >
-          + 새로 업로드
-        </Link>
-      </div>
-    </header>
-  );
-}
-
 function bookToDetail(book: BookRow): BookDetailViewData {
   return {
     title: book.title ?? "",
@@ -75,11 +58,16 @@ function bookToDetail(book: BookRow): BookDetailViewData {
 export default function BooksPage() {
   const [categories, setCategories] = useState<CategoryGroup[] | null>(null);
   const [error, setError] = useState("");
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [selectedBook, setSelectedBook] = useState<BookRow | null>(null);
 
   useEffect(() => {
     fetch("/api/books")
       .then(async (res) => {
+        if (res.status === 401) {
+          setNeedsLogin(true);
+          return;
+        }
         if (!res.ok) throw new Error(GENERAL_ERROR);
         const data = await res.json();
         setCategories(data.categories ?? []);
@@ -92,7 +80,11 @@ export default function BooksPage() {
 
   return (
     <div className="flex flex-1 flex-col bg-neutral-50">
-      <TopNav />
+      <TopNav
+        primaryHref="/"
+        primaryLabel="+ 새로 업로드"
+        maxWidthClassName="max-w-4xl"
+      />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10">
         {error && (
           <div className="rounded-lg border border-red-200 bg-white p-4">
@@ -103,7 +95,32 @@ export default function BooksPage() {
           </div>
         )}
 
-        {!error && selectedBook && (
+        {!error && needsLogin && (
+          <div className="flex flex-col items-center gap-3 py-16 text-center">
+            <p className="text-lg font-medium text-neutral-900">
+              로그인이 필요한 화면이에요
+            </p>
+            <p className="text-sm text-neutral-500">
+              내 목록을 보려면 먼저 로그인해주세요
+            </p>
+            <div className="mt-2 flex gap-2">
+              <Link
+                href="/login?redirect=/books"
+                className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+              >
+                로그인
+              </Link>
+              <Link
+                href="/signup?redirect=/books"
+                className="rounded-md border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-100"
+              >
+                회원가입
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!error && !needsLogin && selectedBook && (
           <div className="flex flex-col gap-6">
             <button
               onClick={() => setSelectedBook(null)}
@@ -115,7 +132,7 @@ export default function BooksPage() {
           </div>
         )}
 
-        {!error && !selectedBook && categories && categories.length === 0 && (
+        {!error && !needsLogin && !selectedBook && categories && categories.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
             <p className="text-lg font-medium text-neutral-900">
               아직 저장된 책이 없어요
@@ -132,7 +149,7 @@ export default function BooksPage() {
           </div>
         )}
 
-        {!error && !selectedBook && categories && categories.length > 0 && (
+        {!error && !needsLogin && !selectedBook && categories && categories.length > 0 && (
           <div className="flex flex-col gap-8">
             <h1 className="text-2xl font-semibold text-neutral-900">
               내 책 목록 ({totalCount})

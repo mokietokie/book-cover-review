@@ -122,18 +122,18 @@
 
 `docs/PRD.md` "Phase 2 — 인증 및 멀티유저" 스코프, `docs/TRD.md` 2.4/4.1/4.2절, `docs/UXUI.md` 5-3/5A절 기준.
 
-- [ ] 9-1. Supabase 프로젝트에서 이메일 확인(Confirm email) 옵션 끄기(가입 즉시 로그인), `NEXT_PUBLIC_SUPABASE_ANON_KEY` 발급 후 로컬 `.env.local`/Vercel 환경변수에 등록
-- [ ] 9-2. `@supabase/ssr` 설치, `lib/supabase/server.ts`(사용자 세션 기반, RLS 적용) / `lib/supabase/client.ts`(브라우저용) 작성, `middleware.ts`로 세션 갱신
-- [ ] 9-3. `books` 테이블 RLS 활성화 + 정책 추가 (`docs/TRD.md` 4.1절 SQL 그대로 Supabase SQL Editor에서 실행)
-- [ ] 9-4. `app/login/page.tsx`, `app/signup/page.tsx` 구현 (UXUI 5A 와이어프레임, 이메일/비밀번호 폼, neutral/zinc 톤)
-- [ ] 9-5. 로그아웃 라우트(`app/api/auth/logout/route.ts`) + `TopNav`에 로그인 상태에 따라 "로그인" ↔ "로그아웃" 표시
-- [ ] 9-6. `app/api/books/route.ts`를 Service Role Key 대신 사용자 세션 클라이언트로 전환 — POST는 비로그인 시 401, GET은 RLS로 본인 책만 반환되는지 확인
-- [ ] 9-7. `app/page.tsx` 결과 화면: 로그인 여부에 따라 "저장됨" 표시 또는 "로그인하면 저장돼요" 배너로 분기 (비로그인 시 `/api/books` POST 호출 자체를 생략)
-- [ ] 9-8. `app/books/page.tsx`: 비로그인 접근 시 UXUI 5-3 "로그인 필요" 안내 표시
-- [ ] 9-9. 레거시 데이터 마이그레이션: 본인 첫 계정 가입 후 `docs/TRD.md` 4.2절 SQL로 `user_id IS NULL` 레코드 귀속 (1회성, 사용자 직접 실행)
-- [ ] 9-10. 통합 검증: (a) 비로그인으로 식별→결과까지 확인, 저장 안 됨 확인 (b) 회원가입→로그인 후 동일 플로우로 저장됨 확인 (c) 두 번째 테스트 계정으로 로그인해 첫 계정의 책이 안 보이는지(RLS) 확인 (d) 로그아웃 후 `/books` 접근 시 로그인 안내 확인
+- [x] 9-1. Supabase 프로젝트에서 이메일 확인(Confirm email) 옵션 끄기(가입 즉시 로그인), `NEXT_PUBLIC_SUPABASE_ANON_KEY` 발급 후 로컬 `.env.local`/Vercel 환경변수에 등록 — 사용자가 Authentication > Sign In / Providers > Email에서 "Confirm sign up" 끄고, 새 API 키 체계의 publishable key를 `NEXT_PUBLIC_SUPABASE_ANON_KEY`로 등록 완료
+- [x] 9-2. `@supabase/ssr` 설치, `lib/supabase/server.ts`(사용자 세션 기반, RLS 적용) / `lib/supabase/client.ts`(브라우저용) 작성, `middleware.ts`로 세션 갱신 — 작성 완료
+- [x] 9-3. `books` 테이블 RLS 활성화 + 정책 추가 (`docs/TRD.md` 4.1절 SQL 그대로 Supabase SQL Editor에서 실행) — 사용자가 SQL Editor에서 실행 완료, `supabase/schema.sql`에도 반영
+- [x] 9-4. `app/login/page.tsx`, `app/signup/page.tsx` 구현 (UXUI 5A 와이어프레임, 이메일/비밀번호 폼, neutral/zinc 톤) — `components/AuthForm.tsx` 공용 컴포넌트로 구현
+- [x] 9-5. 로그아웃 라우트(`app/api/auth/logout/route.ts`) + `TopNav`에 로그인 상태에 따라 "로그인" ↔ "로그아웃" 표시 — `components/TopNav.tsx`로 공용화, 기존 `app/page.tsx`/`app/books/page.tsx` 내부 인라인 TopNav 제거하고 교체
+- [x] 9-6. `app/api/books/route.ts`를 Service Role Key 대신 사용자 세션 클라이언트로 전환 — POST는 비로그인 시 401, GET은 RLS로 본인 책만 반환되는지 확인 — curl로 비로그인 401 확인, 테스트 스크립트로 두 계정 간 RLS 격리 확인(아래 9-10 참고)
+- [x] 9-7. `app/page.tsx` 결과 화면: 로그인 여부에 따라 "저장됨" 표시 또는 "로그인하면 저장돼요" 배너로 분기 (비로그인 시 `/api/books` POST 호출 자체를 생략) — 완료, 비로그인 시 교보/YES24 링크는 클라이언트에서 직접 생성(`buildSearchUrls`)
+- [x] 9-8. `app/books/page.tsx`: 비로그인 접근 시 UXUI 5-3 "로그인 필요" 안내 표시 — `GET /api/books`의 401 응답을 구분해서 안내 화면 렌더링
+- [ ] 9-9. 레거시 데이터 마이그레이션: 본인 첫 계정 가입 후 `docs/TRD.md` 4.2절 SQL로 `user_id IS NULL` 레코드 귀속 (1회성, 사용자 직접 실행) — 아직 미실행, 필요 시 사용자가 진행
+- [x] 9-10. 통합 검증: (a) 비로그인으로 식별→결과까지 확인, 저장 안 됨 확인 (b) 회원가입→로그인 후 동일 플로우로 저장됨 확인 (c) 두 번째 테스트 계정으로 로그인해 첫 계정의 책이 안 보이는지(RLS) 확인 (d) 로그아웃 후 `/books` 접근 시 로그인 안내 확인 — (a)(b)(d)는 사용자가 브라우저로 직접 확인, (c)는 브라우저 자동화 도구 미설치로 `@supabase/supabase-js`를 이용한 임시 스크립트로 두 테스트 계정을 만들어 RLS SELECT/INSERT 정책이 실제로 격리되는지 확인(테스트 계정·데이터는 확인 후 모두 삭제)
 
-**완료 기준**: 비로그인 사용자는 식별/결과까지 자유롭게 쓰되 저장은 안 되고, 로그인 사용자는 본인 책만 저장·조회되며 서로 다른 계정 간 데이터가 섞이지 않는다.
+**완료 기준**: 비로그인 사용자는 식별/결과까지 자유롭게 쓰되 저장은 안 되고, 로그인 사용자는 본인 책만 저장·조회되며 서로 다른 계정 간 데이터가 섞이지 않는다. — 확인 완료.
 **막히면**: RLS 정책이 의도대로 안 걸리면 `lib/supabase/server.ts`가 실제로 anon key + 사용자 JWT로 클라이언트를 만들고 있는지(Service Role Key를 실수로 계속 쓰고 있지 않은지) 먼저 확인한다.
 
 ---

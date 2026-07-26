@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
 
 const GENERAL_ERROR = { error: "일시적인 오류가 발생했어요, 다시 시도해주세요" };
+const UNAUTHORIZED = { error: "로그인이 필요해요" };
 
 interface BookRow {
   id: string;
@@ -10,6 +11,15 @@ interface BookRow {
 }
 
 export async function GET() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(UNAUTHORIZED, { status: 401 });
+  }
+
   const { data, error } = await supabase
     .from("books")
     .select("*")
@@ -39,6 +49,15 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json(UNAUTHORIZED, { status: 401 });
+  }
+
   const body = await request.json().catch(() => null);
   const title = typeof body?.title === "string" ? body.title.trim() : "";
 
@@ -72,6 +91,7 @@ export async function POST(request: NextRequest) {
       reviews: body.reviews ?? null,
       kyobo_search_url: kyoboSearchUrl,
       yes24_search_url: yes24SearchUrl,
+      user_id: user.id,
     })
     .select()
     .single();
