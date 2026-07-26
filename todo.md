@@ -37,11 +37,11 @@
 
 ## Step 2. Supabase 스키마 생성
 
-- [ ] 2-1. `docs/TRD.md` 4절 스키마대로 `books` 테이블 생성 SQL 작성 (`supabase/schema.sql` 등에 보관)
-- [ ] 2-2. Supabase SQL Editor(또는 CLI)로 실제 테이블 생성
-- [ ] 2-3. `lib/supabase.ts` 서버 전용 클라이언트 작성 (Service Role Key 사용, 클라이언트 번들에 노출되지 않도록 `"server-only"` 처리)
+- [x] 2-1. `docs/TRD.md` 4절 스키마대로 `books` 테이블 생성 SQL 작성 (`supabase/schema.sql` 등에 보관) — `supabase/schema.sql` 작성 완료
+- [x] 2-2. Supabase SQL Editor(또는 CLI)로 실제 테이블 생성 — 사용자가 SQL Editor에서 실행, REST API로 `books` 테이블 조회(`200`, `[]`) 확인
+- [x] 2-3. `lib/supabase.ts` 서버 전용 클라이언트 작성 (Service Role Key 사용, 클라이언트 번들에 노출되지 않도록 `"server-only"` 처리) — `server-only` 패키지 적용, 임시 스크립트로 실제 쿼리 성공 확인 후 삭제
 
-**완료 기준**: Supabase 대시보드에서 `books` 테이블과 전체 컬럼이 스키마대로 보인다.
+**완료 기준**: Supabase 대시보드에서 `books` 테이블과 전체 컬럼이 스키마대로 보인다. — REST API 조회로 확인 완료.
 **막히면**: RLS가 기본 활성화되어 쓰기가 막히면, 스켈레톤 단계는 인증이 없으므로 Service Role Key 경로만 쓰는지 확인(Service Role은 RLS 우회). 우회가 안 되면 해당 테이블 RLS를 임시 비활성화.
 
 ## Step 3. 외부 API 연동 레이어 (`lib/`)
