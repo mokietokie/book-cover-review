@@ -76,8 +76,9 @@
 - [x] 5-4. 결과 화면: 표지·평점·카테고리·리뷰 목록·저장 완료 표시·교보/YES24 링크·"다른 표지 업로드하기"
 - [x] 5-5. 에러 상태: 각 단계 API가 반환하는 TRD 6절 문구를 그대로 표시(하드코딩 대신 `error` 필드 사용), "다시 시도"/"다른 사진 선택"
 - [x] 5-6. 모노톤 스타일 가이드(0절 팔레트) 준수 여부 셀프 체크 — `grep -rn "bg-gradient\|backdrop-blur\|dark:" app/` 결과 없음 확인, `app/globals.css`의 스캐폴딩 기본 다크모드 미디어쿼리도 제거
+- [x] 5-7. Empty 상태에 "카메라로 촬영" 버튼 추가 — 모바일에서 폰 카메라로 표지를 바로 찍어 업로드할 수 있도록, `getUserMedia` 기반 라이브러리 대신 `<input type="file" accept="image/*" capture="environment">` 사용(별도 의존성/API 변경 없이 기존 `handleFileSelected`·Selected 상태 그대로 재사용). 실제 스마트폰(같은 Wi-Fi, `next.config.ts`에 `allowedDevOrigins` 추가)으로 접속해 카메라 촬영 → 식별 → 결과 화면까지 수동 확인 완료.
 
-**완료 기준**: 실제 표지 사진 하나를 업로드해 Empty → Selected → 인식 중 → 결과까지 화면 전환이 매끄럽게 동작한다. — 브라우저 자동화 툴 미설치로 UI 클릭 자체는 수동 검증 필요하나, `page.tsx`가 호출하는 4개 API(`/api/identify` → `/api/aladin/search` → `/api/aladin/lookup` → `/api/books`)를 실제 표지 사진(`test-images/test1.jpg`)으로 동일한 순서·페이로드로 curl 호출해 정상 동작 및 응답 필드 일치 확인, 테스트로 저장된 레코드는 삭제해 원상복구.
+**완료 기준**: 실제 표지 사진 하나를 업로드해 Empty → Selected → 인식 중 → 결과까지 화면 전환이 매끄럽게 동작한다. — 브라우저 자동화 툴 미설치로 UI 클릭 자체는 수동 검증 필요하나, `page.tsx`가 호출하는 4개 API(`/api/identify` → `/api/aladin/search` → `/api/aladin/lookup` → `/api/books`)를 실제 표지 사진(`test-images/test1.jpg`)으로 동일한 순서·페이로드로 curl 호출해 정상 동작 및 응답 필드 일치 확인, 테스트로 저장된 레코드는 삭제해 원상복구. 카메라 촬영 경로(5-7)는 실제 스마트폰 수동 테스트로 별도 확인 완료.
 **막히면**: 상태 전환이 꼬이면 페이지 내부를 `idle | selected | identifying | result | error` 같은 단일 상태 머신으로 정리해서 버그를 좁힌다. — 실제로 이 구조로 구현.
 
 ## Step 6. 목록 화면 (`app/books/page.tsx`)

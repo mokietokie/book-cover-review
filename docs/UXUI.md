@@ -70,12 +70,17 @@ TRD의 플로우(업로드 → 인식 → 알라딘 조회 → 결과 표시/저
 │   │                                      │     │
 │   └────────────────────────────────────┘      │
 │                                                │
+│   ┌────────────────────────────────────┐      │
+│   │        📷  카메라로 촬영              │     │  ← border border-neutral-300
+│   └────────────────────────────────────┘      │     rounded-md, bg-white
+│                                                │
 └──────────────────────────────────────────────┘
 ```
 
 - 드롭존: `border-2 border-dashed border-neutral-300 rounded-lg bg-white flex flex-col items-center justify-center py-16 hover:border-neutral-400 cursor-pointer`
 - 아이콘은 outline 스타일 단색 아이콘(예: lucide `Upload`) `text-neutral-400`
 - 드래그 오버 시 `border-neutral-900 bg-neutral-50`로만 변화(그라데이션 없이)
+- 드롭존 아래 "카메라로 촬영" 버튼(`border border-neutral-300 rounded-md bg-white hover:bg-neutral-100`): 숨겨진 `<input type="file" accept="image/*" capture="environment">`를 트리거하는 라벨. 모바일 브라우저에서 탭하면 네이티브 카메라 앱(후면 카메라 우선)이 열리고, 촬영된 사진은 일반 파일 선택과 동일하게 Selected 상태로 이어진다. 데스크톱에서는 `capture` 속성이 무시되어 일반 파일 선택창이 뜬다.
 
 ### 1-2. Selected 상태 (업로드 전 미리보기)
 

@@ -232,6 +232,37 @@ export default function Home() {
                 }
               />
             </label>
+
+            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 transition-colors hover:bg-neutral-100">
+              <svg
+                className="h-5 w-5 text-neutral-500"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6.827 6.175A2.31 2.31 0 0 1 8.929 4.5h6.142a2.31 2.31 0 0 1 2.102 1.675l.545 1.91a2.25 2.25 0 0 0 2.164 1.643h.256c1.243 0 2.25 1.007 2.25 2.25v7.5c0 1.243-1.007 2.25-2.25 2.25H4.5A2.25 2.25 0 0 1 2.25 19.5V12c0-1.243 1.007-2.25 2.25-2.25h.256a2.25 2.25 0 0 0 2.164-1.643l.545-1.91Z"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.5 13.5a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0Z"
+                />
+              </svg>
+              카메라로 촬영
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) =>
+                  handleFileSelected(e.target.files?.[0] ?? null)
+                }
+              />
+            </label>
           </div>
         )}
 
