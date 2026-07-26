@@ -46,11 +46,11 @@
 
 ## Step 3. 외부 API 연동 레이어 (`lib/`)
 
-- [ ] 3-1. `lib/vision.ts`: 이미지 → Anthropic Messages API 호출 → `{ title, author }` JSON 추출 함수. 실패/빈 값 시 명확한 에러 타입 반환.
-- [ ] 3-2. `lib/aladin.ts`: `searchBooks(query)` (ItemSearch 호출, 후보 배열 반환) / `lookupBook(isbn)` (ItemLookUp + `OptResult=reviewList` 호출, 상세+리뷰+카테고리+평점 파싱) 두 함수 작성.
-- [ ] 3-3. 위 두 파일에 대해 실제 키가 있다면 임시 스크립트(`scripts/` 또는 `.test`)로 단독 호출해 응답 구조를 확인하고, `docs/TRD.md`에 적힌 필드명과 실제 응답이 다르면 파싱 로직을 실제 응답 기준으로 맞춘다.
+- [x] 3-1. `lib/vision.ts`: 이미지 → Anthropic Messages API 호출 → `{ title, author }` JSON 추출 함수. 실패/빈 값 시 명확한 에러 타입 반환. — `VisionRecognitionError` 정의, 실제 표지 사진으로 `{"title":"해리포터와 마법사의 돌","author":"J.K. Rowling"}` 정상 추출 확인
+- [x] 3-2. `lib/aladin.ts`: `searchBooks(query)` (ItemSearch 호출, 후보 배열 반환) / `lookupBook(isbn)` (ItemLookUp + `OptResult=reviewList` 호출, 상세+리뷰+카테고리+평점 파싱) 두 함수 작성. — 작성 완료
+- [x] 3-3. 위 두 파일에 대해 실제 키가 있다면 임시 스크립트(`scripts/` 또는 `.test`)로 단독 호출해 응답 구조를 확인하고, `docs/TRD.md`에 적힌 필드명과 실제 응답이 다르면 파싱 로직을 실제 응답 기준으로 맞춘다. — 임시 스크립트로 실제 호출 확인 후 정리(파일 남기지 않음). **발견**: `OptResult=reviewList`를 요청해도 알라딘이 실제 리뷰 내용을 반환하지 않음(여러 인기 도서로 확인, `ratingInfo`의 `commentReviewCount`가 0이 아닌 경우도 동일) — 알라딘 정책 변경으로 추정, TRD 문서와 실제 응답이 다른 부분. `title`/`author`/`isbn13`/`cover`/`categoryName`/`customerReviewRank`는 TRD 필드명과 일치. `lib/aladin.ts`는 `reviews`가 빈 배열이어도 정상 동작하도록 이미 방어적으로 작성됨.
 
-**완료 기준**: 샘플 제목("해리포터와 마법사의 돌" 등)으로 `searchBooks` → `lookupBook`을 호출했을 때 정상적으로 ISBN·카테고리·평점·리뷰가 반환된다.
+**완료 기준**: 샘플 제목("해리포터와 마법사의 돌" 등)으로 `searchBooks` → `lookupBook`을 호출했을 때 정상적으로 ISBN·카테고리·평점·리뷰가 반환된다. — ISBN/카테고리/평점 확인, 리뷰는 위 발견사항대로 알라딘 응답 자체가 비어 있음.
 **막히면**: 알라딘 API는 파라미터 오타(대소문자, `Version` 값)에 민감함 — 공식 문서 URL 포맷을 다시 대조. 401/403이면 TTBKey 미승인 상태일 수 있으니 알라딘 개발자센터에서 키 상태 확인 필요(사용자 조치).
 
 ## Step 4. API 라우트 (`app/api/`)
