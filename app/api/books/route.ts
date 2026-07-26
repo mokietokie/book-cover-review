@@ -31,9 +31,9 @@ export async function GET() {
     }
   }
 
-  const categories = Array.from(grouped.entries()).map(
-    ([categoryName, books]) => ({ categoryName, books })
-  );
+  const categories = Array.from(grouped.entries())
+    .map(([categoryName, books]) => ({ categoryName, books }))
+    .sort((a, b) => b.books.length - a.books.length);
 
   return NextResponse.json({ categories });
 }
@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
         typeof body.aladinItemId === "string" ? body.aladinItemId : null,
       category_name:
         typeof body.categoryName === "string" ? body.categoryName : null,
+      cover_url: typeof body.coverUrl === "string" ? body.coverUrl : null,
       customer_review_rank:
         typeof body.customerReviewRank === "number"
           ? body.customerReviewRank

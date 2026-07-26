@@ -9,6 +9,7 @@ create table if not exists public.books (
   isbn text,
   aladin_item_id text,
   category_name text,
+  cover_url text,
   customer_review_rank numeric,
   reviews jsonb,
   kyobo_search_url text,
