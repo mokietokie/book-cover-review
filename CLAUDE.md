@@ -9,6 +9,7 @@
 - `todo.md`의 Step 순서대로 진행하고, 완료한 항목은 체크박스를 갱신한다.
 - 스택: Next.js(App Router, TS) + Tailwind + Supabase(Postgres) + 알라딘 Open API + Vision LLM(Anthropic).
 - 플로우는 반드시 `사진 → Vision LLM(제목/저자 추출) → 알라딘 ItemSearch(ISBN) → ItemLookUp(OptResult=reviewList)` 순서를 따른다.
+- 사진 입력은 파일 선택/드래그앤드롭 외에, 모바일에서는 `<input capture="environment">`로 카메라 즉시 촬영도 지원한다(별도 라이브러리/`getUserMedia` 없이, 촬영 결과는 기존 파일 선택과 동일하게 처리).
 - 알라딘 검색 결과가 여러 건이어도 **최상위 1건을 자동 채택**한다.
 - 카테고리는 알라딘 `categoryName`을 그대로 쓴다.
 - Supabase `books` 테이블은 `docs/TRD.md` 4절 스키마를 그대로 따르고, `user_id`는 nullable로 두되 값은 채우지 않는다.
