@@ -70,15 +70,15 @@
 
 `docs/UXUI.md` 1~4절 와이어프레임 기준.
 
-- [ ] 5-1. Empty 상태: 드롭존 UI, 파일 선택 처리
-- [ ] 5-2. Selected 상태: 미리보기, "다시 선택"/"이 책 식별하기" 버튼
-- [ ] 5-3. 인식 중 상태: 3단계 체크리스트 UI + 실제 API 3연쇄 호출(`/api/identify` → `/api/aladin/search` → `/api/aladin/lookup`) 순차 연동, 완료 시 `/api/books POST`로 자동 저장
-- [ ] 5-4. 결과 화면: 표지·평점·카테고리·리뷰 목록·저장 완료 표시·교보/YES24 링크·"다른 표지 업로드하기"
-- [ ] 5-5. 에러 상태: 실패 지점별 문구 3종(인식 실패/검색 0건/일반 오류) 분기, "다시 시도"/"다른 사진 선택"
-- [ ] 5-6. 모노톤 스타일 가이드(0절 팔레트) 준수 여부 셀프 체크 — 그라데이션/글래스모피즘 클래스가 안 쓰였는지 grep으로 확인
+- [x] 5-1. Empty 상태: 드롭존 UI, 파일 선택 처리 — 클릭/드래그앤드롭 모두 처리
+- [x] 5-2. Selected 상태: 미리보기, "다시 선택"/"이 책 식별하기" 버튼
+- [x] 5-3. 인식 중 상태: 3단계 체크리스트 UI + 실제 API 3연쇄 호출(`/api/identify` → `/api/aladin/search` → `/api/aladin/lookup`) 순차 연동, 완료 시 `/api/books POST`로 자동 저장
+- [x] 5-4. 결과 화면: 표지·평점·카테고리·리뷰 목록·저장 완료 표시·교보/YES24 링크·"다른 표지 업로드하기"
+- [x] 5-5. 에러 상태: 각 단계 API가 반환하는 TRD 6절 문구를 그대로 표시(하드코딩 대신 `error` 필드 사용), "다시 시도"/"다른 사진 선택"
+- [x] 5-6. 모노톤 스타일 가이드(0절 팔레트) 준수 여부 셀프 체크 — `grep -rn "bg-gradient\|backdrop-blur\|dark:" app/` 결과 없음 확인, `app/globals.css`의 스캐폴딩 기본 다크모드 미디어쿼리도 제거
 
-**완료 기준**: 실제 표지 사진 하나를 업로드해 Empty → Selected → 인식 중 → 결과까지 화면 전환이 매끄럽게 동작한다.
-**막히면**: 상태 전환이 꼬이면 페이지 내부를 `idle | selected | identifying | result | error` 같은 단일 상태 머신으로 정리해서 버그를 좁힌다.
+**완료 기준**: 실제 표지 사진 하나를 업로드해 Empty → Selected → 인식 중 → 결과까지 화면 전환이 매끄럽게 동작한다. — 브라우저 자동화 툴 미설치로 UI 클릭 자체는 수동 검증 필요하나, `page.tsx`가 호출하는 4개 API(`/api/identify` → `/api/aladin/search` → `/api/aladin/lookup` → `/api/books`)를 실제 표지 사진(`test-images/test1.jpg`)으로 동일한 순서·페이로드로 curl 호출해 정상 동작 및 응답 필드 일치 확인, 테스트로 저장된 레코드는 삭제해 원상복구.
+**막히면**: 상태 전환이 꼬이면 페이지 내부를 `idle | selected | identifying | result | error` 같은 단일 상태 머신으로 정리해서 버그를 좁힌다. — 실제로 이 구조로 구현.
 
 ## Step 6. 목록 화면 (`app/books/page.tsx`)
 
