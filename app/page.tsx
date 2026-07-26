@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BookDetailView } from "@/components/BookDetailView";
+import { Hero } from "@/components/Hero";
 import { TopNav } from "@/components/TopNav";
 import { createClient } from "@/lib/supabase/client";
-import type { AladinReview, BookDetailViewData } from "@/lib/types";
+import type { AladinReview, BookDetailViewData, BookStatus } from "@/lib/types";
 
 interface BookDetail {
   title: string;
@@ -26,8 +27,10 @@ interface BookDetail {
 }
 
 interface SavedBook {
+  id: string;
   kyobo_search_url: string;
   yes24_search_url: string;
+  status: BookStatus;
 }
 
 type Status = "idle" | "selected" | "identifying" | "result" | "error";
@@ -44,7 +47,10 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
-function buildSearchUrls(title: string): SavedBook {
+function buildSearchUrls(title: string): {
+  kyobo_search_url: string;
+  yes24_search_url: string;
+} {
   return {
     kyobo_search_url: `https://search.kyobobook.co.kr/search?keyword=${encodeURIComponent(title)}`,
     yes24_search_url: `https://www.yes24.com/product/search?query=${encodeURIComponent(title)}`,
@@ -60,7 +66,10 @@ export default function Home() {
   const [errorMessage, setErrorMessage] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [heroStartClicked, setHeroStartClicked] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const showUpload = heroStartClicked || loggedIn === true;
 
   useEffect(() => {
     const supabase = createClient();
@@ -183,11 +192,32 @@ export default function Home() {
     }
   }
 
+  async function handleStatusChange(status: BookStatus) {
+    if (!saved) return;
+    const res = await fetch(`/api/books/${saved.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) return;
+    setSaved((prev) => (prev ? { ...prev, status } : prev));
+  }
+
+  const isLandingOnly = status === "idle" && !showUpload;
+
   return (
-    <div className="flex flex-1 flex-col bg-neutral-50">
-      <TopNav primaryHref="/books" primaryLabel="내 목록 →" />
-      <main className="mx-auto w-full max-w-md flex-1 px-4 py-10">
-        {status === "idle" && (
+    <div
+      className={`flex flex-1 flex-col bg-neutral-50 ${isLandingOnly ? "justify-center" : ""}`}
+    >
+      {!isLandingOnly && <TopNav primaryHref="/books" primaryLabel="내 목록 →" />}
+      <main
+        className={`mx-auto w-full max-w-md flex-1 px-4 ${isLandingOnly ? "flex flex-col justify-center py-10" : "py-10"}`}
+      >
+        {isLandingOnly && (
+          <Hero loggedIn={loggedIn} onStart={() => setHeroStartClicked(true)} />
+        )}
+
+        {status === "idle" && showUpload && (
           <div className="flex flex-col gap-2">
             <h1 className="text-2xl font-semibold text-neutral-900">
               표지 사진을 업로드하세요
@@ -399,6 +429,8 @@ export default function Home() {
                 } satisfies BookDetailViewData
               }
               showSavedNote={saved !== null}
+              status={saved?.status}
+              onStatusChange={saved ? handleStatusChange : undefined}
             />
 
             {loggedIn === false && (

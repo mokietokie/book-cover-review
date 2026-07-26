@@ -43,9 +43,12 @@ export function TopNav({
       <div
         className={`mx-auto flex ${maxWidthClassName} items-center justify-between px-4 py-3`}
       >
-        <span className="text-base font-semibold text-neutral-900">
+        <Link
+          href="/"
+          className="text-base font-semibold text-neutral-900 hover:text-neutral-700"
+        >
           📚 표지리뷰
-        </span>
+        </Link>
         <div className="flex items-center gap-4">
           <Link
             href={primaryHref}

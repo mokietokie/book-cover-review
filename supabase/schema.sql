@@ -19,7 +19,8 @@ create table if not exists public.books (
   yes24_search_url text,
   user_id uuid,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  status text not null default 'wishlist'
 );
 
 -- 기존 테이블에 이미 존재하는 경우를 위한 마이그레이션 (신규 생성 시에는 no-op)
@@ -69,3 +70,16 @@ where a.user_id is not null
 
 -- 3) 같은 사용자·같은 ISBN 조합은 한 행만 존재하도록 unique 제약 추가 (upsert의 충돌 대상)
 create unique index if not exists books_uidx on public.books (user_id, isbn);
+
+-- docs/PRD.md Phase 3: 구매 판단 상태 태그 (사고싶음/패스)
+alter table public.books add column if not exists status text;
+update public.books set status = 'wishlist' where status is null;
+alter table public.books alter column status set default 'wishlist';
+alter table public.books alter column status set not null;
+
+-- '구매완료' 상태 제거: 기존에 'bought'로 표시해둔 행은 '사고싶음'으로 되돌림
+update public.books set status = 'wishlist' where status = 'bought';
+
+alter table public.books drop constraint if exists books_status_check;
+alter table public.books add constraint books_status_check
+  check (status in ('wishlist', 'passed'));

@@ -3,6 +3,8 @@ export interface AladinReview {
   content: string;
 }
 
+export type BookStatus = "wishlist" | "passed";
+
 export interface BookDetailViewData {
   title: string;
   author: string | null;

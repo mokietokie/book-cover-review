@@ -97,10 +97,13 @@ Supabase `books` 테이블:
 | user_id | uuid, nullable, references auth.users(id) | Phase 2부터 로그인 사용자의 UUID를 채움 |
 | created_at | timestamptz, default now() | 최초 저장 시각 |
 | updated_at | timestamptz, default now() | 마지막으로 (재)조회한 시각. 목록/상세 화면에 "OOOO.OO.OO 조회"로 표시 |
+| status | text, default 'wishlist', check in ('wishlist','passed') | Phase 3: 사고싶음/패스 2단계 상태 태그 |
 
 **Phase 2 변경**: 로그인 사용자가 저장하는 모든 신규 레코드는 `user_id = auth.uid()`로 채워진다. 비로그인 사용자는애초에 `POST /api/books`를 호출할 수 없으므로(401) 이후 `user_id IS NULL`인 레코드는 새로 생기지 않는다. 컬럼 자체는 계속 nullable로 두되(레거시 레코드 호환), RLS 정책은 `auth.uid() = user_id`만 허용한다.
 
-**중복 스캔 처리(신규)**: 같은 책(동일 `isbn`)을 같은 사용자가 다시 스캔하면 새 행을 추가하지 않고 기존 행을 갱신한다(`(user_id, isbn)` unique 제약 + upsert, `updated_at`을 현재 시각으로 갱신). 목록에는 항상 책당 1건만 존재한다.
+**중복 스캔 처리(신규)**: 같은 책(동일 `isbn`)을 같은 사용자가 다시 스캔하면 새 행을 추가하지 않고 기존 행을 갱신한다(`(user_id, isbn)` unique 제약 + upsert, `updated_at`을 현재 시각으로 갱신). 목록에는 항상 책당 1건만 존재한다. 재스캔 시 upsert는 `status`를 건드리지 않는다(이미 "패스"로 표시한 책을 다시 스캔했다고 "사고싶음"으로 되돌리지 않음).
+
+**Phase 3 — status 태그**: 신규 저장 시 기본값은 `wishlist`(사고싶음). 목록/상세 화면에서 `PATCH /api/books/[id]`로 `status`만 변경한다. 알라딘 평점(`customer_review_rank`)과는 무관한 별도 필드.
 
 ### 4.1 RLS 정책 (Phase 2 신규)
 

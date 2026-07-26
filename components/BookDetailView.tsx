@@ -1,5 +1,6 @@
-import type { BookDetailViewData } from "@/lib/types";
+import type { BookDetailViewData, BookStatus } from "@/lib/types";
 import { ViewedDate } from "@/components/ViewedDate";
+import { StatusToggle } from "@/components/StatusToggle";
 import { simplifyCategoryName } from "@/lib/category";
 
 export function StarRating({ rating }: { rating: number }) {
@@ -110,9 +111,13 @@ function ReviewCards({
 export function BookDetailView({
   detail,
   showSavedNote = false,
+  status,
+  onStatusChange,
 }: {
   detail: BookDetailViewData;
   showSavedNote?: boolean;
+  status?: BookStatus;
+  onStatusChange?: (status: BookStatus) => void;
 }) {
   return (
     <div className="flex flex-col gap-6">
@@ -153,10 +158,17 @@ export function BookDetailView({
         </div>
       </div>
 
-      {(showSavedNote || detail.viewedAt) && (
-        <div className="flex items-center gap-2 text-xs text-neutral-500">
-          {showSavedNote && <span>✓ 내 목록에 저장됨</span>}
-          {detail.viewedAt && <ViewedDate date={detail.viewedAt} />}
+      {(showSavedNote || detail.viewedAt || status) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {(showSavedNote || detail.viewedAt) && (
+            <div className="flex items-center gap-2 text-xs text-neutral-500">
+              {showSavedNote && <span>✓ 내 목록에 저장됨</span>}
+              {detail.viewedAt && <ViewedDate date={detail.viewedAt} />}
+            </div>
+          )}
+          {status && onStatusChange && (
+            <StatusToggle status={status} onChange={onStatusChange} />
+          )}
         </div>
       )}
 
