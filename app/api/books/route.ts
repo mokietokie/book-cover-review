@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { simplifyCategoryName } from "@/lib/category";
 
 const GENERAL_ERROR = { error: "일시적인 오류가 발생했어요, 다시 시도해주세요" };
 const UNAUTHORIZED = { error: "로그인이 필요해요" };
@@ -24,7 +25,7 @@ export async function GET() {
     .from("books")
     .select("*")
     .order("category_name", { ascending: true })
-    .order("created_at", { ascending: false });
+    .order("updated_at", { ascending: false });
 
   if (error) {
     return NextResponse.json(GENERAL_ERROR, { status: 500 });
@@ -32,7 +33,7 @@ export async function GET() {
 
   const grouped = new Map<string, BookRow[]>();
   for (const book of (data ?? []) as BookRow[]) {
-    const key = book.category_name ?? "미분류";
+    const key = simplifyCategoryName(book.category_name) ?? "미분류";
     const existing = grouped.get(key);
     if (existing) {
       existing.push(book);
@@ -70,29 +71,33 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase
     .from("books")
-    .insert({
-      image_url: typeof body.imageUrl === "string" ? body.imageUrl : null,
-      title,
-      author: typeof body.author === "string" ? body.author : null,
-      isbn: typeof body.isbn === "string" ? body.isbn : null,
-      aladin_item_id:
-        typeof body.aladinItemId === "string" ? body.aladinItemId : null,
-      category_name:
-        typeof body.categoryName === "string" ? body.categoryName : null,
-      publisher: typeof body.publisher === "string" ? body.publisher : null,
-      pub_date: typeof body.pubDate === "string" ? body.pubDate : null,
-      description:
-        typeof body.description === "string" ? body.description : null,
-      cover_url: typeof body.coverUrl === "string" ? body.coverUrl : null,
-      customer_review_rank:
-        typeof body.customerReviewRank === "number"
-          ? body.customerReviewRank
-          : null,
-      reviews: body.reviews ?? null,
-      kyobo_search_url: kyoboSearchUrl,
-      yes24_search_url: yes24SearchUrl,
-      user_id: user.id,
-    })
+    .upsert(
+      {
+        image_url: typeof body.imageUrl === "string" ? body.imageUrl : null,
+        title,
+        author: typeof body.author === "string" ? body.author : null,
+        isbn: typeof body.isbn === "string" ? body.isbn : null,
+        aladin_item_id:
+          typeof body.aladinItemId === "string" ? body.aladinItemId : null,
+        category_name:
+          typeof body.categoryName === "string" ? body.categoryName : null,
+        publisher: typeof body.publisher === "string" ? body.publisher : null,
+        pub_date: typeof body.pubDate === "string" ? body.pubDate : null,
+        description:
+          typeof body.description === "string" ? body.description : null,
+        cover_url: typeof body.coverUrl === "string" ? body.coverUrl : null,
+        customer_review_rank:
+          typeof body.customerReviewRank === "number"
+            ? body.customerReviewRank
+            : null,
+        reviews: body.reviews ?? null,
+        kyobo_search_url: kyoboSearchUrl,
+        yes24_search_url: yes24SearchUrl,
+        user_id: user.id,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id,isbn" }
+    )
     .select()
     .single();
 

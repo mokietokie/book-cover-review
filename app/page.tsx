@@ -395,6 +395,7 @@ export default function Home() {
                   yes24SearchUrl:
                     saved?.yes24_search_url ??
                     buildSearchUrls(detail.title).yes24_search_url,
+                  viewedAt: null,
                 } satisfies BookDetailViewData
               }
               showSavedNote={saved !== null}

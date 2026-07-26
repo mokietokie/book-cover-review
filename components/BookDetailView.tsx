@@ -1,4 +1,6 @@
 import type { BookDetailViewData } from "@/lib/types";
+import { ViewedDate } from "@/components/ViewedDate";
+import { simplifyCategoryName } from "@/lib/category";
 
 export function StarRating({ rating }: { rating: number }) {
   const filled = Math.max(0, Math.min(5, Math.round((rating / 10) * 5)));
@@ -145,14 +147,17 @@ export function BookDetailView({
           )}
           {detail.categoryName && (
             <span className="mt-1 w-fit rounded-full border border-neutral-300 px-2.5 py-0.5 text-xs text-neutral-600">
-              {detail.categoryName}
+              {simplifyCategoryName(detail.categoryName)}
             </span>
           )}
         </div>
       </div>
 
-      {showSavedNote && (
-        <p className="text-xs text-neutral-500">✓ 내 목록에 저장됨</p>
+      {(showSavedNote || detail.viewedAt) && (
+        <div className="flex items-center gap-2 text-xs text-neutral-500">
+          {showSavedNote && <span>✓ 내 목록에 저장됨</span>}
+          {detail.viewedAt && <ViewedDate date={detail.viewedAt} />}
+        </div>
       )}
 
       {detail.description && (

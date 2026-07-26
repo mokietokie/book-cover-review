@@ -19,4 +19,5 @@ export interface BookDetailViewData {
   reviews: AladinReview[];
   kyoboSearchUrl: string | null;
   yes24SearchUrl: string | null;
+  viewedAt: string | null;
 }

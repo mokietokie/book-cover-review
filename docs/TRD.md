@@ -95,9 +95,12 @@ Supabase `books` 테이블:
 | kyobo_search_url | text | 교보문고 검색 링크 |
 | yes24_search_url | text | YES24 검색 링크 |
 | user_id | uuid, nullable, references auth.users(id) | Phase 2부터 로그인 사용자의 UUID를 채움 |
-| created_at | timestamptz, default now() | |
+| created_at | timestamptz, default now() | 최초 저장 시각 |
+| updated_at | timestamptz, default now() | 마지막으로 (재)조회한 시각. 목록/상세 화면에 "OOOO.OO.OO 조회"로 표시 |
 
 **Phase 2 변경**: 로그인 사용자가 저장하는 모든 신규 레코드는 `user_id = auth.uid()`로 채워진다. 비로그인 사용자는애초에 `POST /api/books`를 호출할 수 없으므로(401) 이후 `user_id IS NULL`인 레코드는 새로 생기지 않는다. 컬럼 자체는 계속 nullable로 두되(레거시 레코드 호환), RLS 정책은 `auth.uid() = user_id`만 허용한다.
+
+**중복 스캔 처리(신규)**: 같은 책(동일 `isbn`)을 같은 사용자가 다시 스캔하면 새 행을 추가하지 않고 기존 행을 갱신한다(`(user_id, isbn)` unique 제약 + upsert, `updated_at`을 현재 시각으로 갱신). 목록에는 항상 책당 1건만 존재한다.
 
 ### 4.1 RLS 정책 (Phase 2 신규)
 
@@ -109,6 +112,12 @@ create policy "본인 책만 조회" on books
 
 create policy "본인 책만 저장" on books
   for insert with check (auth.uid() = user_id);
+
+create policy "본인 책만 수정" on books
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+create policy "본인 책만 삭제" on books
+  for delete using (auth.uid() = user_id);
 ```
 
 Service Role Key(`lib/supabase.ts`)는 RLS를 우회하므로, 이 클라이언트를 쓰는 관리 작업(레거시 마이그레이션)에서만 예외적으로 `user_id`가 NULL인 레코드에 접근한다.

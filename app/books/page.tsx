@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookDetailView, StarRating } from "@/components/BookDetailView";
 import { TopNav } from "@/components/TopNav";
+import { ViewedDate } from "@/components/ViewedDate";
 import type { BookDetailViewData } from "@/lib/types";
 
 interface BookRow {
@@ -24,6 +25,7 @@ interface BookRow {
   } | null;
   kyobo_search_url: string | null;
   yes24_search_url: string | null;
+  updated_at: string;
 }
 
 interface CategoryGroup {
@@ -52,6 +54,7 @@ function bookToDetail(book: BookRow): BookDetailViewData {
     reviews: [],
     kyoboSearchUrl: book.kyobo_search_url,
     yes24SearchUrl: book.yes24_search_url,
+    viewedAt: book.updated_at,
   };
 }
 
@@ -77,6 +80,26 @@ export default function BooksPage() {
 
   const totalCount =
     categories?.reduce((sum, group) => sum + group.books.length, 0) ?? 0;
+
+  async function handleDelete(bookId: string) {
+    if (!window.confirm("이 책을 목록에서 삭제할까요?")) return;
+
+    const res = await fetch(`/api/books/${bookId}`, { method: "DELETE" });
+    if (!res.ok) {
+      setError(GENERAL_ERROR);
+      return;
+    }
+
+    setCategories(
+      (prev) =>
+        prev
+          ?.map((group) => ({
+            ...group,
+            books: group.books.filter((b) => b.id !== bookId),
+          }))
+          .filter((group) => group.books.length > 0) ?? null
+    );
+  }
 
   return (
     <div className="flex flex-1 flex-col bg-neutral-50">
@@ -162,24 +185,39 @@ export default function BooksPage() {
                 </h2>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-6">
                   {group.books.map((book) => (
-                    <button
+                    <div
                       key={book.id}
-                      onClick={() => setSelectedBook(book)}
-                      className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-white p-2 text-left transition-colors hover:border-neutral-400"
+                      className="relative rounded-lg border border-neutral-200 bg-white p-2 transition-colors hover:border-neutral-400"
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={book.cover_url ?? ""}
-                        alt={book.title ?? ""}
-                        className="aspect-[3/4] w-full rounded object-cover"
-                      />
-                      <span className="truncate text-sm font-medium text-neutral-900">
-                        {book.title}
-                      </span>
-                      {book.customer_review_rank !== null && (
-                        <StarRating rating={book.customer_review_rank} />
-                      )}
-                    </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(book.id);
+                        }}
+                        aria-label="삭제"
+                        className="absolute right-1 top-1 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-neutral-300 bg-white text-xs text-neutral-500 hover:border-neutral-500 hover:text-neutral-900"
+                      >
+                        ×
+                      </button>
+                      <button
+                        onClick={() => setSelectedBook(book)}
+                        className="flex w-full flex-col gap-2 text-left"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={book.cover_url ?? ""}
+                          alt={book.title ?? ""}
+                          className="aspect-[3/4] w-full rounded object-cover"
+                        />
+                        <span className="truncate text-sm font-medium text-neutral-900">
+                          {book.title}
+                        </span>
+                        {book.customer_review_rank !== null && (
+                          <StarRating rating={book.customer_review_rank} />
+                        )}
+                        <ViewedDate date={book.updated_at} />
+                      </button>
+                    </div>
                   ))}
                 </div>
               </section>
