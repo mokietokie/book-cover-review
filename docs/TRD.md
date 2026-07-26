@@ -43,24 +43,34 @@ Next.js(App Router) 단일 앱으로 구성. 프론트엔드(업로드 UI, 결�
   - 예: `https://search.kyobobook.co.kr/search?keyword=<title>`, `https://www.yes24.com/product/search?query=<title>`
 
 ### 2.4 Supabase
-- Postgres 기반, 서버 사이드에서는 Service Role Key로 접근(RLS 우회, 스켈레톤 단계는 인증 없음).
-- `@supabase/supabase-js` 클라이언트를 `lib/supabase.ts`에서 서버 전용으로 초기화.
+- Postgres 기반. **Phase 2부터 인증이 도입되면서 클라이언트 역할이 분리된다**:
+  - `lib/supabase.ts` (Service Role Key, 기존): RLS를 우회해야 하는 관리 작업(레거시 데이터 마이그레이션 등)에만 한정 사용.
+  - `lib/supabase/server.ts` (신규, `@supabase/ssr`): 요청의 쿠키에서 사용자 세션을 읽어 **anon key + 사용자 JWT**로 동작하는 서버 클라이언트. `/api/books` GET/POST 등 사용자 데이터 접근은 전부 이 클라이언트로 전환해 RLS가 실제로 걸리게 한다.
+  - `lib/supabase/client.ts` (신규, `@supabase/ssr`): 로그인/회원가입 폼 등 브라우저에서 직접 Supabase Auth를 호출해야 하는 곳에서 사용(anon key).
+- `middleware.ts`(신규)에서 `@supabase/ssr`의 세션 갱신 로직을 실행해 만료된 액세스 토큰을 자동 리프레시.
 
 ## 3. 디렉토리 구조 (제안)
 
 ```
 app/
-  page.tsx                 # 업로드 화면
-  books/page.tsx           # 카테고리별 목록 화면
+  page.tsx                 # 업로드 화면 (비로그인도 접근 가능)
+  books/page.tsx           # 카테고리별 목록 화면 (로그인 필요)
+  login/page.tsx           # 로그인 (신규)
+  signup/page.tsx          # 회원가입 (신규)
   api/
-    identify/route.ts      # Vision LLM 호출
-    aladin/search/route.ts # 알라딘 검색
-    aladin/lookup/route.ts # 알라딘 상세조회
-    books/route.ts         # Supabase CRUD (GET: 목록, POST: 저장)
+    identify/route.ts      # Vision LLM 호출 (인증 불필요)
+    aladin/search/route.ts # 알라딘 검색 (인증 불필요)
+    aladin/lookup/route.ts # 알라딘 상세조회 (인증 불필요)
+    books/route.ts         # Supabase CRUD (GET: 본인 목록, POST: 저장 — 둘 다 로그인 필요)
+    auth/logout/route.ts   # 로그아웃 (신규)
 lib/
   vision.ts                # Vision LLM 클라이언트 래퍼
   aladin.ts                # 알라딘 API 클라이언트 래퍼
-  supabase.ts              # Supabase 서버 클라이언트
+  supabase.ts              # Supabase 서버 클라이언트 (Service Role, 관리 작업 전용)
+  supabase/
+    server.ts              # 신규: 사용자 세션 기반 서버 클라이언트 (RLS 적용)
+    client.ts               # 신규: 브라우저용 클라이언트 (로그인/가입 폼)
+middleware.ts               # 신규: Supabase 세션 갱신
 ```
 
 ## 4. 데이터 모델
@@ -84,10 +94,32 @@ Supabase `books` 테이블:
 | reviews | jsonb | 알라딘 리뷰 목록(원본 일부) |
 | kyobo_search_url | text | 교보문고 검색 링크 |
 | yes24_search_url | text | YES24 검색 링크 |
-| user_id | uuid, nullable | 추후 Supabase Auth 연동 대비, 현재는 미사용 |
+| user_id | uuid, nullable, references auth.users(id) | Phase 2부터 로그인 사용자의 UUID를 채움 |
 | created_at | timestamptz, default now() | |
 
-인증이 없는 스켈레톤 단계에서는 `user_id`를 NULL로 두고 전체 데이터를 단일 사용자 것으로 취급한다. 추후 Supabase Auth 도입 시 이 컬럼을 채우고 RLS 정책을 추가하는 방식으로 확장한다.
+**Phase 2 변경**: 로그인 사용자가 저장하는 모든 신규 레코드는 `user_id = auth.uid()`로 채워진다. 비로그인 사용자는애초에 `POST /api/books`를 호출할 수 없으므로(401) 이후 `user_id IS NULL`인 레코드는 새로 생기지 않는다. 컬럼 자체는 계속 nullable로 두되(레거시 레코드 호환), RLS 정책은 `auth.uid() = user_id`만 허용한다.
+
+### 4.1 RLS 정책 (Phase 2 신규)
+
+```sql
+alter table books enable row level security;
+
+create policy "본인 책만 조회" on books
+  for select using (auth.uid() = user_id);
+
+create policy "본인 책만 저장" on books
+  for insert with check (auth.uid() = user_id);
+```
+
+Service Role Key(`lib/supabase.ts`)는 RLS를 우회하므로, 이 클라이언트를 쓰는 관리 작업(레거시 마이그레이션)에서만 예외적으로 `user_id`가 NULL인 레코드에 접근한다.
+
+### 4.2 레거시 데이터 마이그레이션 (Phase 2, 1회성 수동 작업)
+
+기존 `user_id IS NULL` 레코드를 최초 가입 계정으로 귀속시킨다. 사용자가 Supabase SQL Editor에서 최초 가입 후 아래 SQL을 1회 실행(본인 UUID는 Supabase Auth 대시보드의 `auth.users`에서 확인):
+
+```sql
+update books set user_id = '<최초 가입한 본인 계정의 uuid>' where user_id is null;
+```
 
 ## 5. 환경 변수
 
@@ -95,6 +127,7 @@ Supabase `books` 테이블:
 - `ANTHROPIC_API_KEY`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `SUPABASE_SERVICE_ROLE_KEY` (서버 전용, 클라이언트 번들에 절대 노출 금지)
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Phase 2 신규, 클라이언트 노출 가능 — RLS로 보호되므로 anon key 자체는 공개되어도 안전)
 
 ## 6. 에러 처리 방침 (스켈레톤 최소 수준)
 
@@ -108,7 +141,8 @@ Supabase `books` 테이블:
 - 교보문고/YES24 리뷰까지 통합하려면 스크래핑 or 공식 파트너십 필요 — ToS 검토 후 결정
 - 검색 결과가 여러 건일 때 사용자가 직접 후보를 선택하는 UI
 - 알라딘 categoryName을 넘어서는 자체 LLM 기반 재분류
-- Supabase Auth 연동을 통한 다중 사용자 지원 및 RLS 정책 설계
+- 비밀번호 재설정, 소셜 로그인 (Phase 2에서는 제외, v0.2 이후 검토)
+- 다중 사용자 간 책 목록 공유 기능
 
 ## 8. 검증 방법 (이번 문서화 단계)
 
