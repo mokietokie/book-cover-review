@@ -76,6 +76,9 @@ Supabase `books` 테이블:
 | isbn | text | 알라딘 ISBN13 |
 | aladin_item_id | text | 알라딘 상품 고유 ID |
 | category_name | text | 알라딘 categoryName |
+| publisher | text | 알라딘 출판사명 |
+| pub_date | text | 알라딘 출판일 |
+| description | text | 알라딘 책 소개(item.description) |
 | cover_url | text | 알라딘 표지 이미지 URL(목록 화면 썸네일용, Step 6에서 추가) |
 | customer_review_rank | numeric | 알라딘 평점 |
 | reviews | jsonb | 알라딘 리뷰 목록(원본 일부) |

@@ -30,6 +30,10 @@ export interface AladinBookDetail {
   itemId: string;
   cover: string;
   categoryName: string;
+  publisher: string;
+  pubDate: string;
+  link: string;
+  description: string;
   customerReviewRank: number;
   ratingCount: number;
   commentReviewCount: number;
@@ -95,6 +99,10 @@ export async function lookupBook(isbn13: string): Promise<AladinBookDetail | nul
     itemId: String(item.itemId ?? ""),
     cover: String(item.cover ?? ""),
     categoryName: String(item.categoryName ?? ""),
+    publisher: String(item.publisher ?? ""),
+    pubDate: String(item.pubDate ?? ""),
+    link: String(item.link ?? ""),
+    description: String(item.description ?? ""),
     customerReviewRank: Number(ratingScore ?? item.customerReviewRank ?? 0),
     ratingCount: Number(ratingInfo.ratingCount ?? 0),
     commentReviewCount: Number(ratingInfo.commentReviewCount ?? 0),

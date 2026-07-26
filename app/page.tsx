@@ -12,6 +12,10 @@ interface BookDetail {
   itemId: string;
   cover: string;
   categoryName: string;
+  publisher: string;
+  pubDate: string;
+  link: string;
+  description: string;
   customerReviewRank: number;
   ratingCount: number;
   commentReviewCount: number;
@@ -144,6 +148,9 @@ export default function Home() {
           isbn: lookupData.isbn13,
           aladinItemId: lookupData.itemId,
           categoryName: lookupData.categoryName,
+          publisher: lookupData.publisher,
+          pubDate: lookupData.pubDate,
+          description: lookupData.description,
           customerReviewRank: lookupData.customerReviewRank,
           coverUrl: lookupData.cover,
           reviews: {
@@ -333,8 +340,14 @@ export default function Home() {
                   author: detail.author,
                   cover: detail.cover,
                   categoryName: detail.categoryName,
+                  publisher: detail.publisher || null,
+                  pubDate: detail.pubDate || null,
+                  description: detail.description || null,
+                  aladinProductUrl: detail.link || null,
                   customerReviewRank: detail.customerReviewRank,
                   ratingCount: detail.ratingCount,
+                  commentReviewCount: detail.commentReviewCount,
+                  myReviewCount: detail.myReviewCount,
                   reviews: detail.reviews,
                   kyoboSearchUrl: saved?.kyobo_search_url ?? null,
                   yes24SearchUrl: saved?.yes24_search_url ?? null,

@@ -60,6 +60,10 @@ export async function POST(request: NextRequest) {
         typeof body.aladinItemId === "string" ? body.aladinItemId : null,
       category_name:
         typeof body.categoryName === "string" ? body.categoryName : null,
+      publisher: typeof body.publisher === "string" ? body.publisher : null,
+      pub_date: typeof body.pubDate === "string" ? body.pubDate : null,
+      description:
+        typeof body.description === "string" ? body.description : null,
       cover_url: typeof body.coverUrl === "string" ? body.coverUrl : null,
       customer_review_rank:
         typeof body.customerReviewRank === "number"

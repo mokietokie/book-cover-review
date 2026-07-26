@@ -10,9 +10,17 @@ interface BookRow {
   title: string | null;
   author: string | null;
   category_name: string | null;
+  publisher: string | null;
+  pub_date: string | null;
+  description: string | null;
   cover_url: string | null;
+  aladin_item_id: string | null;
   customer_review_rank: number | null;
-  reviews: { ratingCount?: number } | null;
+  reviews: {
+    ratingCount?: number;
+    commentReviewCount?: number;
+    myReviewCount?: number;
+  } | null;
   kyobo_search_url: string | null;
   yes24_search_url: string | null;
 }
@@ -48,8 +56,16 @@ function bookToDetail(book: BookRow): BookDetailViewData {
     author: book.author,
     cover: book.cover_url,
     categoryName: book.category_name,
+    publisher: book.publisher,
+    pubDate: book.pub_date,
+    description: book.description,
+    aladinProductUrl: book.aladin_item_id
+      ? `https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=${book.aladin_item_id}`
+      : null,
     customerReviewRank: book.customer_review_rank,
     ratingCount: book.reviews?.ratingCount ?? null,
+    commentReviewCount: book.reviews?.commentReviewCount ?? null,
+    myReviewCount: book.reviews?.myReviewCount ?? null,
     reviews: [],
     kyoboSearchUrl: book.kyobo_search_url,
     yes24SearchUrl: book.yes24_search_url,
