@@ -48,21 +48,23 @@
 
 - [x] 3-1. `lib/vision.ts`: 이미지 → Anthropic Messages API 호출 → `{ title, author }` JSON 추출 함수. 실패/빈 값 시 명확한 에러 타입 반환. — `VisionRecognitionError` 정의, 실제 표지 사진으로 `{"title":"해리포터와 마법사의 돌","author":"J.K. Rowling"}` 정상 추출 확인
 - [x] 3-2. `lib/aladin.ts`: `searchBooks(query)` (ItemSearch 호출, 후보 배열 반환) / `lookupBook(isbn)` (ItemLookUp + `OptResult=reviewList` 호출, 상세+리뷰+카테고리+평점 파싱) 두 함수 작성. — 작성 완료
-- [x] 3-3. 위 두 파일에 대해 실제 키가 있다면 임시 스크립트(`scripts/` 또는 `.test`)로 단독 호출해 응답 구조를 확인하고, `docs/TRD.md`에 적힌 필드명과 실제 응답이 다르면 파싱 로직을 실제 응답 기준으로 맞춘다. — 임시 스크립트로 실제 호출 확인 후 정리(파일 남기지 않음). **발견**: `OptResult=reviewList`를 요청해도 알라딘이 실제 리뷰 내용을 반환하지 않음(여러 인기 도서로 확인, `ratingInfo`의 `commentReviewCount`가 0이 아닌 경우도 동일) — 알라딘 정책 변경으로 추정, TRD 문서와 실제 응답이 다른 부분. `title`/`author`/`isbn13`/`cover`/`categoryName`/`customerReviewRank`는 TRD 필드명과 일치. `lib/aladin.ts`는 `reviews`가 빈 배열이어도 정상 동작하도록 이미 방어적으로 작성됨.
+- [x] 3-3. 위 두 파일에 대해 실제 키가 있다면 임시 스크립트(`scripts/` 또는 `.test`)로 단독 호출해 응답 구조를 확인하고, `docs/TRD.md`에 적힌 필드명과 실제 응답이 다르면 파싱 로직을 실제 응답 기준으로 맞춘다. — 임시 스크립트로 실제 호출 확인 후 정리(파일 남기지 않음). **발견**: `OptResult=reviewList`를 요청해도 알라딘이 실제 리뷰 내용을 반환하지 않음(여러 인기 도서로 확인, `ratingInfo`의 `commentReviewCount`가 0이 아닌 경우도 동일) — 알라딘 정책 변경으로 추정, TRD 문서와 실제 응답이 다른 부분. `title`/`author`/`isbn13`/`cover`/`categoryName`/`customerReviewRank`는 TRD 필드명과 일치. `lib/aladin.ts`는 `reviews`가 빈 배열이어도 정상 동작하도록 이미 방어적으로 작성됨. **추가 수정**: 정수(0~10)뿐인 `customerReviewRank` 대신 `OptResult=ratingInfo`의 `ratingScore`(소수점 첫째자리)를 우선 사용하도록 변경(둘 다 컬럼명은 `customer_review_rank` 그대로, 값만 더 정밀하게).
 
 **완료 기준**: 샘플 제목("해리포터와 마법사의 돌" 등)으로 `searchBooks` → `lookupBook`을 호출했을 때 정상적으로 ISBN·카테고리·평점·리뷰가 반환된다. — ISBN/카테고리/평점 확인, 리뷰는 위 발견사항대로 알라딘 응답 자체가 비어 있음.
 **막히면**: 알라딘 API는 파라미터 오타(대소문자, `Version` 값)에 민감함 — 공식 문서 URL 포맷을 다시 대조. 401/403이면 TTBKey 미승인 상태일 수 있으니 알라딘 개발자센터에서 키 상태 확인 필요(사용자 조치).
 
 ## Step 4. API 라우트 (`app/api/`)
 
-- [ ] 4-1. `app/api/identify/route.ts`: 업로드된 이미지를 받아 `lib/vision.ts` 호출, `{ title, author }` 반환. 인식 실패 시 에러 코드로 구분되게 응답.
-- [ ] 4-2. `app/api/aladin/search/route.ts`: title/author 텍스트로 `lib/aladin.searchBooks` 호출, 최상위 1건 반환.
-- [ ] 4-3. `app/api/aladin/lookup/route.ts`: ISBN으로 `lib/aladin.lookupBook` 호출, 상세 반환.
-- [ ] 4-4. `app/api/books/route.ts`: `GET`(전체 목록, 카테고리별 그룹 가능하도록 정렬), `POST`(식별 결과 저장 — 이때 `kyobo_search_url`/`yes24_search_url`도 함께 생성해 저장) 구현.
-- [ ] 4-5. 각 라우트에 대해 curl 또는 `fetch`로 수동 호출해 정상/에러 응답 확인.
+- [x] 4-1. `app/api/identify/route.ts`: 업로드된 이미지를 받아 `lib/vision.ts` 호출, `{ title, author }` 반환. 인식 실패 시 에러 코드로 구분되게 응답. — `FormData`(`image` 필드) 파싱, 성공/실패(422)/파일없음(400) 확인
+- [x] 4-2. `app/api/aladin/search/route.ts`: title/author 텍스트로 `lib/aladin.searchBooks` 호출, 최상위 1건 반환. — 정상/0건(404) 확인
+- [x] 4-3. `app/api/aladin/lookup/route.ts`: ISBN으로 `lib/aladin.lookupBook` 호출, 상세 반환. — 정상/not-found(404) 확인. **버그 발견 및 수정**: 존재하지 않는 ISBN(`0000000000000` 등)에 알라딘이 에러 대신 중고 판매자가 등록한 더미 ISBN 상품(`mallType:"USED"`)을 반환하는 경우가 있어, `lib/aladin.ts`의 `lookupBook`에 `item.mallType !== "BOOK"`이면 null(not found) 처리하는 방어 로직 추가.
+- [x] 4-4. `app/api/books/route.ts`: `GET`(전체 목록, 카테고리별 그룹 가능하도록 정렬), `POST`(식별 결과 저장 — 이때 `kyobo_search_url`/`yes24_search_url`도 함께 생성해 저장) 구현. — `GET`은 `{ categories: [{ categoryName, books }] }` 형태로 이미 그룹핑해서 반환(Step 6에서 바로 렌더링 가능). `reviews` 컬럼은 알라딘이 개별 리뷰를 안 주므로 집계 통계(`ratingCount`/`commentReviewCount`/`myReviewCount`) 객체를 저장.
+- [x] 4-5. 각 라우트에 대해 curl 또는 `fetch`로 수동 호출해 정상/에러 응답 확인. — 4개 라우트 모두 정상/실패 케이스 curl로 검증, 테스트로 저장한 더미 레코드는 삭제해 원상복구.
 
-**완료 기준**: 4개 라우트 모두 정상 케이스·실패 케이스(빈 값, 0건 검색 등)에서 `docs/TRD.md` 6절 에러 정책에 맞는 응답을 준다.
+**완료 기준**: 4개 라우트 모두 정상 케이스·실패 케이스(빈 값, 0건 검색 등)에서 `docs/TRD.md` 6절 에러 정책에 맞는 응답을 준다. — 확인 완료.
 **막히면**: 이미지 업로드 바디 파싱(FormData vs base64) 이슈가 흔함 — Route Handler에서 `request.formData()` 사용 여부를 먼저 확정하고 프론트와 계약을 맞춘다.
+
+**참고**: `image_url` 컬럼에 넣을 실제 이미지 저장(Supabase Storage 등)은 `docs/TRD.md`/`todo.md`에 별도 단계가 없어 이번 Step에서는 다루지 않음(`POST /api/books`는 `imageUrl`을 optional로 받아 없으면 `null` 저장). Step 5에서 필요해지면 논의.
 
 ## Step 5. 업로드 화면 (`app/page.tsx`)
 

@@ -27,9 +27,13 @@ export interface AladinBookDetail {
   title: string;
   author: string;
   isbn13: string;
+  itemId: string;
   cover: string;
   categoryName: string;
   customerReviewRank: number;
+  ratingCount: number;
+  commentReviewCount: number;
+  myReviewCount: number;
   reviews: AladinReview[];
 }
 
@@ -65,7 +69,7 @@ export async function lookupBook(isbn13: string): Promise<AladinBookDetail | nul
   url.searchParams.set("ItemId", isbn13);
   url.searchParams.set("output", "js");
   url.searchParams.set("Version", "20131101");
-  url.searchParams.set("OptResult", "reviewList");
+  url.searchParams.set("OptResult", "reviewList,ratingInfo");
 
   const res = await fetch(url.toString());
   if (!res.ok) {
@@ -74,21 +78,27 @@ export async function lookupBook(isbn13: string): Promise<AladinBookDetail | nul
   const data = await res.json();
   const items = Array.isArray(data.item) ? data.item : [];
   const item = items[0];
-  if (!item) {
+  if (!item || item.mallType !== "BOOK") {
     return null;
   }
 
   const reviewList = Array.isArray(item.subInfo?.reviewList)
     ? item.subInfo.reviewList
     : [];
+  const ratingInfo = item.subInfo?.ratingInfo ?? {};
+  const ratingScore = ratingInfo.ratingScore;
 
   return {
     title: String(item.title ?? ""),
     author: String(item.author ?? ""),
     isbn13: String(item.isbn13 ?? ""),
+    itemId: String(item.itemId ?? ""),
     cover: String(item.cover ?? ""),
     categoryName: String(item.categoryName ?? ""),
-    customerReviewRank: Number(item.customerReviewRank ?? 0),
+    customerReviewRank: Number(ratingScore ?? item.customerReviewRank ?? 0),
+    ratingCount: Number(ratingInfo.ratingCount ?? 0),
+    commentReviewCount: Number(ratingInfo.commentReviewCount ?? 0),
+    myReviewCount: Number(ratingInfo.myReviewCount ?? 0),
     reviews: reviewList.map((r: Record<string, unknown>) => ({
       title: String(r.title ?? ""),
       content: String(r.content ?? ""),
