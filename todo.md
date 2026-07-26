@@ -17,22 +17,22 @@
 
 ## Step 0. 프로젝트 스캐폴딩
 
-- [ ] 0-1. Next.js(App Router, TypeScript) 프로젝트 초기화 (`create-next-app`)
-- [ ] 0-2. Tailwind CSS 설정 확인 (App Router 템플릿에 기본 포함되는지 확인, `docs/UXUI.md` 0절 팔레트를 `tailwind.config` 또는 CSS 변수에 반영할지 검토 — 기본 Tailwind 그레이스케일 토큰 그대로 써도 무방하므로 커스텀 설정은 최소화)
-- [ ] 0-3. `@supabase/supabase-js`, `@anthropic-ai/sdk` 설치
-- [ ] 0-4. `.env.example` 작성 (`ALADIN_TTBKEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) — 실제 값은 `.env.local`에 사용자가 채움
-- [ ] 0-5. 기본 lint/format 동작 확인 (`npm run lint`)
+- [x] 0-1. Next.js(App Router, TypeScript) 프로젝트 초기화 (`create-next-app`) — 임시 디렉터리에 스캐폴딩 후 기존 `CLAUDE.md`/`todo.md`/`docs/`를 보존하며 병합
+- [x] 0-2. Tailwind CSS 설정 확인 (App Router 템플릿에 기본 포함되는지 확인, `docs/UXUI.md` 0절 팔레트를 `tailwind.config` 또는 CSS 변수에 반영할지 검토 — 기본 Tailwind 그레이스케일 토큰 그대로 써도 무방하므로 커스텀 설정은 최소화) — Tailwind v4(PostCSS 플러그인) 기본 템플릿 그대로 사용, 커스텀 설정 없음
+- [x] 0-3. `@supabase/supabase-js`, `@anthropic-ai/sdk` 설치 — `npm install` 완료, `package.json`에 반영
+- [x] 0-4. `.env.example` 작성 (`ALADIN_TTBKEY`, `ANTHROPIC_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) — 실제 값은 `.env.local`에 사용자가 채움
+- [x] 0-5. 기본 lint/format 동작 확인 (`npm run lint`) — 에러 없음 확인
 
-**완료 기준**: `npm run dev`로 기본 Next.js 페이지가 뜬다.
+**완료 기준**: `npm run dev`로 기본 Next.js 페이지가 뜬다. — 확인 완료 (`curl localhost:3000` → HTTP 200)
 **막히면**: 버전 충돌/피어디펜던시 에러는 `package.json` 버전 고정 후 재설치로 해결.
 
 ## Step 1. 외부 서비스 준비 (사용자 조치 필요 — 블로킹 가능 구간)
 
-- [ ] 1-1. Supabase 프로젝트 생성 및 `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` 발급 → `.env.local`에 입력 **(사용자)**
-- [ ] 1-2. 알라딘 TTBKey 발급(알라딘 회원가입 후 Open API 신청) → `.env.local`에 입력 **(사용자)**
-- [ ] 1-3. Anthropic API 키 발급 → `.env.local`에 입력 **(사용자)**
+- [x] 1-1. Supabase 프로젝트 생성 및 `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` 발급 → `.env.local`에 입력 **(사용자)** — 프로젝트 `fatyiomwlpgmittbsvnj`, 새 API 키 체계의 secret key를 `SUPABASE_SERVICE_ROLE_KEY`로 사용
+- [x] 1-2. 알라딘 TTBKey 발급(알라딘 회원가입 후 Open API 신청) → `.env.local`에 입력 **(사용자)** — `ttbjlee01261418001` 발급 확인, `.env.local`에 반영
+- [x] 1-3. Anthropic API 키 발급 → `.env.local`에 입력 **(사용자)**
 
-**완료 기준**: `.env.local`에 4개 값이 모두 채워져 있다.
+**완료 기준**: `.env.local`에 4개 값이 모두 채워져 있다. — 4개 값 모두 확인 완료.
 **막히면**: 이 스텝은 자동화 불가 — 값이 없으면 Step 2~4는 코드까지만 작성하고 실제 호출 검증은 값이 채워진 뒤로 미룬다. Step 0, 5(UI 정적 부분)는 키 없이도 진행 가능하므로 먼저 처리.
 
 ## Step 2. Supabase 스키마 생성
@@ -113,5 +113,6 @@
 
 ## 현재 상태 메모
 
-- 프로젝트 루트: `/Users/mok/projects_2607/book-cover-review` (아직 git 저장소 아님 — 초기 커밋은 Step 0 이후 사용자 확인받고 진행)
-- Step 1(외부 서비스 키 발급)은 사용자만 할 수 있는 작업이라 병행: 키가 없어도 Step 0, 5(정적 UI 부분)는 먼저 진행 가능
+- 프로젝트 루트: `/Users/mok/projects_2607/book-cover-review` (이미 git 저장소, `main` 브랜치에 기획 문서 커밋 존재 — Step 0 스캐폴딩 결과는 아직 커밋 전, 사용자 확인 후 커밋 예정)
+- Step 0 완료: Next.js 16(App Router, TS) + Tailwind v4 + `@supabase/supabase-js` + `@anthropic-ai/sdk` 설치, `.env.example` 작성, lint/dev 서버 확인 완료
+- Step 1(외부 서비스 키 발급)은 사용자만 할 수 있는 작업 — 다음 단계로 진행 필요
